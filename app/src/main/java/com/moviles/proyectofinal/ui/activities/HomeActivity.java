@@ -211,7 +211,7 @@ public class HomeActivity extends AppCompatActivity {
         bottomNavigationView.setOnItemReselectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.navigation_home) {
-                scrollToTop(placesRecyclerView);  // Asumiendo placesRecyclerView es el RecyclerView relevante
+                scrollToTop(placesRecyclerView);
             }
         });
     }
