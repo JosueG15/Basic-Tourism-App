@@ -1,0 +1,64 @@
+plugins {
+    alias(libs.plugins.androidApplication)
+    id 'com.google.gms.google-services'
+    id 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin' apply(true)
+}
+
+android {
+    namespace 'com.moviles.proyectofinal'
+    compileSdk 34
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    defaultConfig {
+        applicationId "com.moviles.proyectofinal"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+        buildConfigField 'String', 'GOOGLE_PLACES_BASE_URL', '"https://maps.googleapis.com/maps/api/"'
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    secrets {
+        propertiesFileName = "secrets.properties"
+
+        ignoreList.add("keyToIgnore")
+        ignoreList.add("sdk.*")
+    }
+
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation libs.firebase.database
+    implementation libs.play.services.location
+    implementation libs.retrofit
+    implementation libs.converter.gson
+    implementation libs.okhttp
+    implementation libs.places
+    implementation libs.lifecycle.viewmodel
+    implementation platform(libs.firebase.bom)
+    implementation libs.appcompat
+    implementation libs.material
+    implementation libs.activity
+    implementation libs.constraintlayout
+    implementation libs.firebase.auth
+    implementation libs.recyclerview
+    testImplementation libs.junit
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core
+}

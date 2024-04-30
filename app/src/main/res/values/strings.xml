@@ -1,0 +1,37 @@
+<resources>
+    <!-- General -->
+    <string name="app_name">Turismo App</string>
+    <string name="global_image_text">Imagen</string>
+    <string name="global_email">Email</string>
+    <string name="global_username">Usuario</string>
+    <string name="global_password">Contraseña</string>
+    <string name="global_remember">Recuerdame</string>
+
+    <!-- SignUp Activity -->
+    <string name="signup_welcome_message">¡Iniciemos tu\nviaje juntos!</string>
+    <string name="signup_register">Registrate</string>
+    <string name="signup_existing_account">¿Ya tienes cuenta? <u>Inicia sesión</u></string>
+
+    <!-- LogIn Activity -->
+    <string name="login_welcome_message">¡Bienvenido de vuelta!</string>
+    <string name="login_forgot_password"><u>¿Olvidaste tu contraseña?</u></string>
+    <string name="login_button">Iniciar sesión</string>
+    <string name="login_create_account">¿No tienes cuenta? <u>Registrate</u></string>
+
+    <!-- Home Activity -->
+    <string name="home_location_text">Te encuentras en</string>
+    <string name="home_location_text_default">...</string>
+    <string name="home_search">Buscar</string>
+    <string name="home_location_not_available">Ubicación no disponible</string>
+    <string name="home_categories">Categorias</string>
+    <string name="home_trips">Destinos destacados</string>
+    <string name="home_my_trips">Mis viajes</string>
+
+    <!-- Menu -->
+    <string name="menu_home">Inicio</string>
+    <string name="menu_location">Ubicacion</string>
+    <string name="menu_chat">Chat</string>
+    <string name="menu_favorite">Favoritos</string>
+    <string name="menu_profile">Perfil</string>
+
+</resources>
