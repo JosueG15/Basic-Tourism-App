@@ -1,12 +1,14 @@
 package com.moviles.proyectofinal.ui.activities;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -22,6 +24,10 @@ import android.net.Uri;
 import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
@@ -30,6 +36,7 @@ import com.google.android.libraries.places.api.Places;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.moviles.proyectofinal.BuildConfig;
 import com.moviles.proyectofinal.R;
+import com.moviles.proyectofinal.data.entity.PlacePrediction;
 import com.moviles.proyectofinal.ui.adapter.GoogleCategoryAdapter;
 import com.moviles.proyectofinal.ui.adapter.GooglePlaceAdapter;
 import com.moviles.proyectofinal.ui.viewmodels.LocationViewModel;
@@ -44,6 +51,8 @@ public class HomeActivity extends AppCompatActivity {
     private GoogleCategoryAdapter categoryAdapter;
     private RecyclerView placesRecyclerView;
     private GooglePlaceAdapter placeAdapter;
+    private AutoCompleteTextView autoCompleteTextView;
+    private BottomNavigationView bottomNavigationView;
     private String currentType = "";
 
     @Override
@@ -51,13 +60,8 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_home);
-        if (!Places.isInitialized()) {
-            Places.initialize(getApplicationContext(), BuildConfig.GOOGLE_PLACES_API_KEY);
-        }
 
-        locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
-        locationTextView = findViewById(R.id.tv_location_default);
-
+        setupElements();
         setupInsets();
         checkPermissions();
         setupObservers();
@@ -65,6 +69,29 @@ public class HomeActivity extends AppCompatActivity {
         setupAdapters();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        bottomNavigationView.setSelectedItemId(R.id.navigation_home);
+        autoCompleteTextView.clearFocus();
+        autoCompleteTextView.setText("");
+
+        if (getCurrentFocus() != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+        }
+    }
+
+
+    private void setupElements() {
+        if (!Places.isInitialized()) {
+            Places.initialize(getApplicationContext(), BuildConfig.GOOGLE_PLACES_API_KEY);
+        }
+        locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
+        locationTextView = findViewById(R.id.tv_location_default);
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
+        autoCompleteTextView = findViewById(R.id.et_search);
+    }
     private void setupInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.cl_main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -119,9 +146,29 @@ public class HomeActivity extends AppCompatActivity {
     private void setupObservers() {
         AutoCompleteTextView autoCompleteTextView = findViewById(R.id.et_search);
         locationViewModel.getSearchResults().observe(this, results -> {
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, results);
+            ArrayAdapter<PlacePrediction> adapter = new ArrayAdapter<PlacePrediction>(this, android.R.layout.simple_dropdown_item_1line, results) {
+                @NonNull
+                @Override
+                public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                    View view = super.getView(position, convertView, parent);
+                    TextView textView = view.findViewById(android.R.id.text1);
+                    PlacePrediction item = getItem(position);
+                    if (item != null) {
+                        textView.setText(item.getDescription());
+                    }
+                    return view;
+                }
+            };
             autoCompleteTextView.setAdapter(adapter);
-            adapter.notifyDataSetChanged();
+            autoCompleteTextView.setOnItemClickListener((parent, view, position, id) -> {
+                PlacePrediction prediction = adapter.getItem(position);
+                if (prediction != null) {
+                    navigateToPlaceActivity(prediction.getId());
+                }
+            });
+            if (!results.isEmpty()) {
+                autoCompleteTextView.showDropDown();
+            }
         });
 
         autoCompleteTextView.addTextChangedListener(new TextWatcher() {
@@ -150,7 +197,7 @@ public class HomeActivity extends AppCompatActivity {
         recyclerView.setAdapter(categoryAdapter);
 
         placesRecyclerView = findViewById(R.id.rv_top_trip_list);
-        placeAdapter = new GooglePlaceAdapter(this, new ArrayList<>());
+        placeAdapter = new GooglePlaceAdapter(this, new ArrayList<>(), this::navigateToPlaceActivity);
         placesRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         placesRecyclerView.setAdapter(placeAdapter);
 
@@ -166,7 +213,7 @@ public class HomeActivity extends AppCompatActivity {
 
         locationViewModel.getNearbyPlaces("").observe(this, newPlaces -> {
             if (placeAdapter != null) {
-                placeAdapter.addPlaces(newPlaces);
+                placeAdapter.addPlaces(newPlaces, false);
             }
         });
     }
@@ -185,41 +232,48 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void setupBottomNavigationView() {
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setOnItemSelectedListener(this::onNavigationItemSelected);
+        bottomNavigationView.setOnItemReselectedListener(this::onNavigationItemReselected);
+    }
 
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.navigation_home) {
-                // Navega a Home
-                return true;
-            } else if (id == R.id.navigation_location) {
-                // Navega a Location
-                return true;
-            } else if (id == R.id.navigation_chat) {
-                // Navega a Chat
-                return true;
-            } else if (id == R.id.navigation_heart) {
-                // Navega a Heart
-                return true;
-            } else if (id == R.id.navigation_person) {
-                // Navega a Person
-                return true;
-            }
-            return false;
-        });
+    private boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        final int menuId = item.getItemId();
 
-        bottomNavigationView.setOnItemReselectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.navigation_home) {
-                scrollToTop(placesRecyclerView);
-            }
-        });
+        if (menuId == R.id.navigation_home) {
+            return true;
+        } else if (menuId == R.id.navigation_location) {
+            // Handle location action
+            return true;
+        } else if (menuId == R.id.navigation_chat) {
+            // Handle chat action
+            return true;
+        } else if (menuId == R.id.navigation_heart) {
+            startActivity(new Intent(this, FavoritesActivity.class));
+            return true;
+        } else if (menuId == R.id.navigation_person) {
+            startActivity(new Intent(this, ProfileActivity.class));
+            return true;
+        }
+        return false;
+    }
+
+
+    private void onNavigationItemReselected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.navigation_home) {
+            scrollToTop(placesRecyclerView);
+        }
     }
 
     private void scrollToTop(RecyclerView recyclerView) {
         if (recyclerView != null) {
             recyclerView.scrollToPosition(0);
         }
+    }
+
+    private void navigateToPlaceActivity(String placeId) {
+        Intent intent = new Intent(this, PlacesActivity.class);
+        intent.putExtra("placeId", placeId);
+        startActivity(intent);
     }
 
 }

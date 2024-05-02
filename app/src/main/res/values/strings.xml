@@ -34,4 +34,24 @@
     <string name="menu_favorite">Favoritos</string>
     <string name="menu_profile">Perfil</string>
 
+    <!-- Favorites -->
+    <string name="favorite_title">Favoritos</string>
+    <string name="favorite_places">Lugares Favoritos</string>
+    <string name="favorite_name">Nombre</string>
+    <string name="favorite_view">Ver</string>
+
+    <!-- Places -->
+    <string name="places_title">Detalles</string>
+    <string name="places_default_photo">0 / 0</string>
+    <string name="places_image_count">%d / %d</string>
+    <string name="places_default_review_content">Great place, really enjoyed our visit. Will definitely come back!</string>
+    <string name="places_submit">Opinar</string>
+    <string name="places_enter_review">Digite su opinion</string>
+
+    <!-- Rating -->
+    <string name="rating_title">¡Califica!</string>
+    <string name="rating_send">Enviar</string>
+
+    <!-- Profile -->
+    <string name="profile_logout">Cerrar Sesión</string>
 </resources>

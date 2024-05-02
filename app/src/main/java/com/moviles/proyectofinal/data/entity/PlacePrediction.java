@@ -16,5 +16,10 @@ public class PlacePrediction {
     public String getId() {
         return placeId;
     }
+
+    @Override
+    public String toString() {
+        return description;
+    }
 }
 

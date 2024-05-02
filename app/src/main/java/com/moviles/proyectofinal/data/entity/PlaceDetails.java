@@ -2,10 +2,13 @@ package com.moviles.proyectofinal.data.entity;
 
 import android.graphics.Bitmap;
 
+import java.util.List;
+
 public class PlaceDetails {
     private GooglePlace place;
     private String nextPageToken;
     private Bitmap photo;
+    private List<Bitmap> photos;
     private boolean isFavorite;
 
     public PlaceDetails(GooglePlace place, Bitmap photo, String token) {
@@ -27,8 +30,12 @@ public class PlaceDetails {
         return photo;
     }
 
-    public void setPhoto(Bitmap photo) {
-        this.photo = photo;
+    public List<Bitmap> getPhotos() {
+        return photos;
+    }
+
+    public void setPhotos(List<Bitmap> photos) {
+        this.photos = photos;
     }
 
     public boolean isFavorite() {

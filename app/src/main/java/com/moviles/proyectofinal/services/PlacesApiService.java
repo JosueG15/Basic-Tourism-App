@@ -1,6 +1,5 @@
 package com.moviles.proyectofinal.services;
 
-import com.moviles.proyectofinal.data.entity.GeocodingResponse;
 import com.moviles.proyectofinal.data.entity.PlaceResponse;
 
 import retrofit2.Call;
@@ -26,19 +25,6 @@ public interface PlacesApiService {
     @GET("place/details/json")
     Call<PlaceResponse> getPlaceDetails(
             @Query("place_id") String placeId,
-            @Query("key") String apiKey
-    );
-
-    @GET("place/photo")
-    Call<PlaceResponse> getPlacePhoto(
-            @Query("photoreference") String photoReference,
-            @Query("key") String apiKey,
-            @Query("maxwidth") int maxWidth
-    );
-
-    @GET("geocode/json")
-    Call<GeocodingResponse> getPlaceDetailsFromCoords(
-            @Query("latlng") String latlng,
             @Query("key") String apiKey
     );
 }

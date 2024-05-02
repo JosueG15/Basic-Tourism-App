@@ -35,10 +35,6 @@ public class GooglePhotos {
         this.height = height;
     }
 
-    public void setPhotoReference(String photoReference) {
-        this.photoReference = photoReference;
-    }
-
     public void setWidth(int width) {
         this.width = width;
     }

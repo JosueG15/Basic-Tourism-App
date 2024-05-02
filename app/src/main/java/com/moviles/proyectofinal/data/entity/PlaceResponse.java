@@ -1,6 +1,5 @@
 package com.moviles.proyectofinal.data.entity;
 
-import com.google.android.libraries.places.api.model.Place;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
@@ -11,6 +10,9 @@ public class PlaceResponse {
 
     @SerializedName("results")
     private List<GooglePlace> results;
+
+    @SerializedName("result")
+    private GooglePlace result;
 
     @SerializedName("status")
     private String status;
@@ -26,8 +28,8 @@ public class PlaceResponse {
         return results;
     }
 
-    public String getStatus() {
-        return status;
+    public GooglePlace getResult() {
+        return result;
     }
 
     public String getNextPageToken() {

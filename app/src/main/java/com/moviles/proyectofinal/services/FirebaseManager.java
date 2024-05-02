@@ -7,8 +7,10 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.moviles.proyectofinal.data.entity.GooglePlaceReview;
 import com.moviles.proyectofinal.data.entity.PlaceDetails;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -98,11 +100,73 @@ public class FirebaseManager {
         }
     }
 
+    public void fetchFavoritePlaceIds(FirebaseFavoriteCallback callback) {
+        if (mAuth.getCurrentUser() != null) {
+            String userId = mAuth.getCurrentUser().getUid();
+            DatabaseReference favoritesRef = mDatabase.child("favorites").child(userId);
+            favoritesRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    List<String> placeIds = new ArrayList<>();
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                        if (Boolean.TRUE.equals(snapshot.getValue(Boolean.class))) {
+                            placeIds.add(snapshot.getKey());
+                        }
+                    }
+                    callback.onSuccessPlaceIds(placeIds);
+                }
 
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    callback.onError("Error al cargar favoritos: " + error.getMessage());
+                }
+            });
+        } else {
+            callback.onError("Usuario no autenticado.");
+        }
+    }
+
+    public void saveReview(String placeId, GooglePlaceReview review, FirebaseCallback callback) {
+        DatabaseReference reviewRef = mDatabase.child("reviews").child(placeId).push();
+        reviewRef.setValue(review)
+                .addOnSuccessListener(aVoid -> callback.onSuccess("Review guardada correctamente."))
+                .addOnFailureListener(e -> callback.onError("Error al guardar review: " + e.getMessage()));
+    }
+
+    public void fetchReviews(String placeId, FirebaseReviewsCallback callback) {
+        DatabaseReference reviewsRef = mDatabase.child("reviews").child(placeId);
+        reviewsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                List<GooglePlaceReview> reviews = new ArrayList<>();
+                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                    GooglePlaceReview review = snapshot.getValue(GooglePlaceReview.class);
+                    reviews.add(review);
+                }
+                callback.onSuccessReviews(reviews);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                callback.onError("Error al cargar reviews: " + error.getMessage());
+            }
+        });
+    }
+
+    public interface FirebaseReviewsCallback {
+        void onSuccessReviews(List<GooglePlaceReview> reviews);
+        void onError(String error);
+    }
 
 
     public interface FirebaseCallback {
         void onSuccess(String message);
+        void onError(String error);
+    }
+
+    public interface FirebaseFavoriteCallback {
+        void onSuccessPlaceIds(List<String> placesIds);
+
         void onError(String error);
     }
 }

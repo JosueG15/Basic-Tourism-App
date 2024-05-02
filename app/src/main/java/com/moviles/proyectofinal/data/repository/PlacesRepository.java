@@ -53,7 +53,7 @@ public class PlacesRepository {
     private FusedLocationProviderClient locationClient;
     private PlacesClient placesClient;
     private Context context;
-    private MutableLiveData<List<String>> searchResults = new MutableLiveData<>();
+    private MutableLiveData<List<PlacePrediction>> searchResults = new MutableLiveData<>();
     private String nextPageToken = "";
 
     private void extractPlacesWithPhotos(PlaceResponse response, MutableLiveData<List<PlaceDetails>> placesLiveData) {
@@ -118,7 +118,7 @@ public class PlacesRepository {
                 .build();
         apiService = retrofit.create(PlacesApiService.class);
         this.locationClient = LocationServices.getFusedLocationProviderClient(context);
-        this.placesClient = Places.createClient(context); // Initialize PlacesClient
+        this.placesClient = Places.createClient(context);
     }
 
     private String getAddressFromLocation(Location location) {
@@ -141,10 +141,6 @@ public class PlacesRepository {
         return BitmapFactory.decodeResource(context.getResources(), R.drawable.bg_default_place);
     }
 
-    private List<String> processAutocompleteResults(PlaceResponse response) {
-        return response.getPredictions().stream().map(PlacePrediction::getDescription).collect(Collectors.toList());
-    }
-
     public static synchronized PlacesRepository getInstance(Context context) {
         if (instance == null) {
             instance = new PlacesRepository(context);
@@ -152,7 +148,7 @@ public class PlacesRepository {
         return instance;
     }
 
-    public LiveData<List<String>> getSearchResults() {
+    public LiveData<List<PlacePrediction>> getSearchResults() {
         return searchResults;
     }
 
@@ -181,15 +177,15 @@ public class PlacesRepository {
                 @Override
                 public void onResponse(Call<PlaceResponse> call, Response<PlaceResponse> response) {
                     if (response.isSuccessful() && response.body() != null) {
-                        searchResults.postValue(processAutocompleteResults(response.body()));
+                        searchResults.postValue(response.body().getPredictions());
                     } else {
-                        searchResults.postValue(Collections.singletonList("Search failed: " + response.message()));
+                        searchResults.postValue(Collections.emptyList());
                     }
                 }
 
                 @Override
                 public void onFailure(Call<PlaceResponse> call, Throwable t) {
-                    searchResults.postValue(Collections.singletonList("API call failed: " + t.getMessage()));
+                    searchResults.postValue(Collections.emptyList());
                 }
             });
         });
@@ -245,7 +241,7 @@ public class PlacesRepository {
                         public void onResponse(Call<PlaceResponse> call, Response<PlaceResponse> response) {
                             if (response.isSuccessful() && response.body() != null) {
                                 extractPlacesWithPhotos(response.body(), placesLiveData);
-                                nextPageToken = response.body().getNextPageToken();  // Assuming this is part of your response
+                                nextPageToken = response.body().getNextPageToken();
                             } else {
                                 Log.e("API Error", "Search failed: " + response.message());
                                 placesLiveData.postValue(new ArrayList<>());
@@ -260,12 +256,131 @@ public class PlacesRepository {
                     });
                 });
             } else {
-                placesLiveData.postValue(new ArrayList<>()); // Location not available
+                placesLiveData.postValue(new ArrayList<>());
             }
         });
 
         return placesLiveData;
     }
+
+    public LiveData<List<PlaceDetails>> getPlacesDetails(List<String> placeIds) {
+        MutableLiveData<List<PlaceDetails>> placesDetailsLiveData = new MutableLiveData<>();
+        List<PlaceDetails> placeDetailsList = new ArrayList<>();
+        AtomicInteger counter = new AtomicInteger(placeIds.size());
+
+        for (String placeId : placeIds) {
+            Executors.newSingleThreadExecutor().execute(() -> {
+                Call<PlaceResponse> call = apiService.getPlaceDetails(placeId, BuildConfig.GOOGLE_PLACES_API_KEY);
+                call.enqueue(new Callback<PlaceResponse>() {
+                    @Override
+                    public void onResponse(Call<PlaceResponse> call, Response<PlaceResponse> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getResult() != null) {
+                            GooglePlace place = response.body().getResult();
+                            if (place.getPhotos() != null && !place.getPhotos().isEmpty()) {
+                                GooglePhotos photo = place.getPhotos().get(0);
+                                fetchPhotoBitmap(photo.getPhotoReference(), 400, new PhotoLoadCallback() {
+                                    @Override
+                                    public void onPhotoLoaded(Bitmap photo) {
+                                        placeDetailsList.add(new PlaceDetails(place, photo, ""));
+                                        if (counter.decrementAndGet() == 0) {
+                                            placesDetailsLiveData.postValue(placeDetailsList);
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onError() {
+                                        placeDetailsList.add(new PlaceDetails(place, getPlaceholderImage(), ""));
+                                        if (counter.decrementAndGet() == 0) {
+                                            placesDetailsLiveData.postValue(placeDetailsList);
+                                        }
+                                    }
+                                });
+                            } else {
+                                placeDetailsList.add(new PlaceDetails(place, getPlaceholderImage(), ""));
+                                if (counter.decrementAndGet() == 0) {
+                                    placesDetailsLiveData.postValue(placeDetailsList);
+                                }
+                            }
+                        } else {
+                            Log.e("API Error", "Failed to fetch place details: " + response.message());
+                            if (counter.decrementAndGet() == 0) {
+                                placesDetailsLiveData.postValue(placeDetailsList);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<PlaceResponse> call, Throwable t) {
+                        Log.e("API Failure", "API call failed: " + t.getMessage());
+                        if (counter.decrementAndGet() == 0) {
+                            placesDetailsLiveData.postValue(placeDetailsList);
+                        }
+                    }
+                });
+            });
+        }
+
+        return placesDetailsLiveData;
+    }
+
+    public LiveData<PlaceDetails> getPlaceDetailsWithAllPhotos(String placeId) {
+        MutableLiveData<PlaceDetails> placeDetailsLiveData = new MutableLiveData<>();
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            Call<PlaceResponse> call = apiService.getPlaceDetails(placeId, BuildConfig.GOOGLE_PLACES_API_KEY);
+            call.enqueue(new Callback<PlaceResponse>() {
+                @Override
+                public void onResponse(Call<PlaceResponse> call, Response<PlaceResponse> response) {
+                    if (response.isSuccessful() && response.body() != null && response.body().getResult() != null) {
+                        GooglePlace place = response.body().getResult();
+                        List<Bitmap> photos = new ArrayList<>();
+                        AtomicInteger photoCount = new AtomicInteger();
+                        if (place.getPhotos() != null && !place.getPhotos().isEmpty()) {
+                            photoCount.set(place.getPhotos().size());
+                            for (GooglePhotos photoMetadata : place.getPhotos()) {
+                                fetchPhotoBitmap(photoMetadata.getPhotoReference(), 400, new PhotoLoadCallback() {
+                                    @Override
+                                    public void onPhotoLoaded(Bitmap photo) {
+                                        photos.add(photo);
+                                        if (photoCount.decrementAndGet() == 0) {
+                                            PlaceDetails placeDetails = new PlaceDetails(place, null, response.body().getNextPageToken());
+                                            placeDetails.setPhotos(photos);
+                                            placeDetailsLiveData.postValue(placeDetails);
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onError() {
+                                        if (photoCount.decrementAndGet() == 0) {
+                                            PlaceDetails placeDetails = new PlaceDetails(place, getPlaceholderImage(), response.body().getNextPageToken());
+                                            placeDetails.setPhotos(photos);
+                                            placeDetailsLiveData.postValue(placeDetails);
+                                        }
+                                    }
+                                });
+                            }
+                        } else {
+                            PlaceDetails placeDetails = new PlaceDetails(place, getPlaceholderImage(), "");
+                            placeDetails.setPhotos(new ArrayList<>());
+                            placeDetailsLiveData.postValue(placeDetails);
+                        }
+                    } else {
+                        Log.e("API Error", "Failed to fetch place details: " + response.message());
+                        placeDetailsLiveData.postValue(null);
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<PlaceResponse> call, Throwable t) {
+                    Log.e("API Failure", "API call failed: " + t.getMessage());
+                    placeDetailsLiveData.postValue(null);
+                }
+            });
+        });
+
+        return placeDetailsLiveData;
+    }
+
 
     public interface PhotoLoadCallback {
         void onPhotoLoaded(Bitmap photo);

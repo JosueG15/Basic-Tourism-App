@@ -18,28 +18,39 @@ import com.moviles.proyectofinal.services.FirebaseManager;
 
 import java.util.List;
 
-public class GooglePlaceAdapter extends RecyclerView.Adapter<GooglePlaceAdapter.GooglePlaceViewHolder> {
+public class GooglePlaceAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private List<PlaceDetails> placeDetailsList;
     private LayoutInflater inflater;
 
     private FirebaseManager firebaseManager;
     private Context context;
+    private OnPlaceClickListener listener;
 
-    public GooglePlaceAdapter(Context context, List<PlaceDetails> placeDetailsList) {
+    private boolean isLoaderVisible = true;
+
+    private static final int VIEW_TYPE_ITEM = 0;
+    private static final int VIEW_TYPE_LOADING = 1;
+
+    public GooglePlaceAdapter(Context context, List<PlaceDetails> placeDetailsList, OnPlaceClickListener listener) {
         this.context = context;
         this.placeDetailsList = placeDetailsList;
         this.inflater = LayoutInflater.from(context);
         this.firebaseManager = new FirebaseManager();
+        this.listener = listener;
     }
 
-    public void addPlaces(List<PlaceDetails> newPlaces) {
+    public void addPlaces(List<PlaceDetails> newPlaces, boolean hasMore) {
         firebaseManager.loadFavoritesAndUpdate(newPlaces, new FirebaseManager.FirebaseCallback() {
             @Override
             public void onSuccess(String message) {
                 int startInsertIndex = placeDetailsList.size();
                 placeDetailsList.addAll(newPlaces);
+                isLoaderVisible = hasMore;
                 notifyItemRangeInserted(startInsertIndex, newPlaces.size());
+                if (!hasMore) {
+                    notifyItemRemoved(placeDetailsList.size());
+                }
             }
 
             @Override
@@ -47,27 +58,55 @@ public class GooglePlaceAdapter extends RecyclerView.Adapter<GooglePlaceAdapter.
                 Log.e("Adapter", "Error al cargar favoritos: " + error);
                 int startInsertIndex = placeDetailsList.size();
                 placeDetailsList.addAll(newPlaces);
+                isLoaderVisible = hasMore;
                 notifyItemRangeInserted(startInsertIndex, newPlaces.size());
+                if (!hasMore) {
+                    notifyItemRemoved(placeDetailsList.size());
+                }
             }
         });
     }
 
+
+    @Override
+    public int getItemViewType(int position) {
+        if (position == placeDetailsList.size() && isLoaderVisible) {
+            return VIEW_TYPE_LOADING;
+        } else {
+            return VIEW_TYPE_ITEM;
+        }
+    }
+
     @NonNull
     @Override
-    public GooglePlaceViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View itemView = inflater.inflate(R.layout.item_place_card, parent, false);
-        return new GooglePlaceViewHolder(itemView);
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+
+        if (viewType == VIEW_TYPE_LOADING) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.skeleton_item_placeholder, parent, false);
+            return new LoadingViewHolder(view);
+        } else {
+            View itemView = inflater.inflate(R.layout.item_place_card, parent, false);
+            return new GooglePlaceViewHolder(itemView);
+        }
     }
 
     @Override
-    public void onBindViewHolder(@NonNull GooglePlaceViewHolder holder, int position) {
-        PlaceDetails placeDetails = placeDetailsList.get(position);
-        holder.bind(placeDetails);
+    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+        if (holder instanceof GooglePlaceViewHolder) {
+            if (position < placeDetailsList.size()) {
+                GooglePlaceViewHolder viewHolder = (GooglePlaceViewHolder) holder;
+                PlaceDetails placeDetails = placeDetailsList.get(position);
+                viewHolder.bind(placeDetails);
+            }
+        }
     }
 
     @Override
     public int getItemCount() {
-        return placeDetailsList.size();
+        if (placeDetailsList == null) {
+            return 0;
+        }
+        return placeDetailsList.size() + (isLoaderVisible ? 1 : 0);
     }
 
     public class GooglePlaceViewHolder extends RecyclerView.ViewHolder {
@@ -106,6 +145,14 @@ public class GooglePlaceAdapter extends RecyclerView.Adapter<GooglePlaceAdapter.
                     });
                 }
             });
+
+            itemView.setOnClickListener(v -> {
+                int position = getBindingAdapterPosition();
+                if (position != RecyclerView.NO_POSITION) {
+                    PlaceDetails placeDetails = placeDetailsList.get(position);
+                    listener.onPlaceClicked(placeDetails.getPlace().getPlaceId());  // Trigger the callback with the placeId
+                }
+            });
         }
 
         public void bind(PlaceDetails placeDetails) {
@@ -125,10 +172,20 @@ public class GooglePlaceAdapter extends RecyclerView.Adapter<GooglePlaceAdapter.
         }
     }
 
+    public class LoadingViewHolder extends RecyclerView.ViewHolder {
+        LoadingViewHolder(View itemView) {
+            super(itemView);
+        }
+    }
+
     public void setPlaces(List<PlaceDetails> newPlaces) {
         placeDetailsList.clear();
         placeDetailsList.addAll(newPlaces);
         notifyDataSetChanged();
+    }
+
+    public interface OnPlaceClickListener {
+        void onPlaceClicked(String placeId);
     }
 
 }

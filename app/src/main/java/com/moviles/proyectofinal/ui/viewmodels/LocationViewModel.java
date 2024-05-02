@@ -7,8 +7,11 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.moviles.proyectofinal.data.entity.GooglePlaceReview;
 import com.moviles.proyectofinal.data.entity.PlaceDetails;
+import com.moviles.proyectofinal.data.entity.PlacePrediction;
 import com.moviles.proyectofinal.data.repository.PlacesRepository;
+import com.moviles.proyectofinal.services.FirebaseManager;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,7 +25,15 @@ public class LocationViewModel extends AndroidViewModel {
     private MutableLiveData<List<PlaceDetails>> nearbyPlacesLiveData = new MutableLiveData<>();
     private List<PlaceDetails> currentPlaceDetails = new ArrayList<>();
 
+    private MutableLiveData<List<GooglePlaceReview>> reviewsLiveData = new MutableLiveData<>();
+
     private String nextPageToken = "";
+
+    private MutableLiveData<String> errorMessageLiveData = new MutableLiveData<>();
+
+    private MutableLiveData<String> successMessageLiveData = new MutableLiveData<>();
+
+
 
     public LocationViewModel(@NonNull Application application) {
         super(application);
@@ -38,8 +49,24 @@ public class LocationViewModel extends AndroidViewModel {
         placesRepository.getAutocompletePlaces(input);
     }
 
-    public LiveData<List<String>> getSearchResults() {
+    public LiveData<List<PlacePrediction>> getSearchResults() {
         return placesRepository.getSearchResults();
+    }
+
+    public LiveData<PlaceDetails> getPlaceDetailsWithAllPhotos(String placeId) {
+        return placesRepository.getPlaceDetailsWithAllPhotos(placeId);
+    }
+
+    public LiveData<String> getErrorMessageLiveData() {
+        return errorMessageLiveData;
+    }
+
+    public LiveData<String> getSuccessMessageLiveData() {
+        return successMessageLiveData;
+    }
+
+    public LiveData<List<GooglePlaceReview>> getReviewsLiveData() {
+        return reviewsLiveData;
     }
 
     public LiveData<String> getCurrentLocation() {
@@ -72,12 +99,63 @@ public class LocationViewModel extends AndroidViewModel {
         }
     }
 
-
-
-
-
-
     public LiveData<List<PlaceDetails>> observeNearbyPlaces() {
         return nearbyPlacesLiveData;
     }
+
+    public void loadFavoritePlacesDetails() {
+        FirebaseManager firebaseManager = new FirebaseManager();
+        firebaseManager.fetchFavoritePlaceIds(new FirebaseManager.FirebaseFavoriteCallback() {
+            @Override
+            public void onSuccessPlaceIds(List<String> placeIds) {
+                if (!placeIds.isEmpty()) {
+                    placesRepository.getPlacesDetails(placeIds).observeForever(placesDetails -> {
+                        nearbyPlacesLiveData.postValue(placesDetails);
+                    });
+                } else {
+                    nearbyPlacesLiveData.postValue(new ArrayList<>());
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                nearbyPlacesLiveData.postValue(new ArrayList<>());
+            }
+        });
+    }
+
+    public void loadReviews(String placeId, List<GooglePlaceReview> googleReviews) {
+        FirebaseManager firebaseManager = new FirebaseManager();
+        firebaseManager.fetchReviews(placeId, new FirebaseManager.FirebaseReviewsCallback() {
+            @Override
+            public void onSuccessReviews(List<GooglePlaceReview> firebaseReviews) {
+                List<GooglePlaceReview> combinedReviews = new ArrayList<>(googleReviews);
+                combinedReviews.addAll(firebaseReviews);
+                reviewsLiveData.postValue(combinedReviews);
+            }
+
+            @Override
+            public void onError(String error) {
+                reviewsLiveData.postValue(googleReviews);
+            }
+        });
+    }
+
+    public void submitReview(String placeId, GooglePlaceReview review) {
+        FirebaseManager firebaseManager = new FirebaseManager();
+        firebaseManager.saveReview(placeId, review, new FirebaseManager.FirebaseCallback() {
+            @Override
+            public void onSuccess(String message) {
+                successMessageLiveData.postValue(message);
+                loadReviews(placeId, reviewsLiveData.getValue());
+            }
+
+            @Override
+            public void onError(String error) {
+                errorMessageLiveData.postValue(error);
+            }
+        });
+    }
+
+
 }

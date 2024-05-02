@@ -44,6 +44,9 @@ android {
 }
 
 dependencies {
+    implementation libs.shimmer
+    implementation libs.glide
+    implementation libs.photoView
     implementation libs.firebase.database
     implementation libs.play.services.location
     implementation libs.retrofit

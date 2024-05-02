@@ -27,6 +27,17 @@ public class GooglePlace {
     @SerializedName("user_ratings_total")
     public int totalRatings;
 
+    @SerializedName("address_components")
+    public List<GooglePlaceAddress> addressComponents;
+
+    @SerializedName("url")
+    public String url;
+
+    @SerializedName("reviews")
+    public List<GooglePlaceReview> reviews;
+
+
+
     public GooglePlace(String name, String placeId, String reference, String vicinity, List<GooglePhotos> photos, Double rating, int totalRatings) {
         this.name = name;
         this.placeId = placeId;
@@ -34,34 +45,6 @@ public class GooglePlace {
         this.vicinity = vicinity;
         this.photos = photos;
         this.rating = rating;
-        this.totalRatings = totalRatings;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setPlaceId(String placeId) {
-        this.placeId = placeId;
-    }
-
-    public void setReference(String reference) {
-        this.reference = reference;
-    }
-
-    public void setPhotos(List<GooglePhotos> photos) {
-        this.photos = photos;
-    }
-
-    public void setVicinity(String vicinity) {
-        this.vicinity = vicinity;
-    }
-
-    public void setRating(Double rating) {
-        this.rating = rating;
-    }
-
-    public void setTotalRatings(int totalRatings) {
         this.totalRatings = totalRatings;
     }
 
@@ -85,11 +68,7 @@ public class GooglePlace {
         return rating;
     }
 
-    public int getTotalRatings() {
-        return totalRatings;
-    }
+    public List<GooglePlaceReview> getReviews() { return reviews;}
 
-    public String getReference() {
-        return reference;
-    }
+    public List<GooglePlaceAddress> getAddressComponents() { return addressComponents; }
 }
