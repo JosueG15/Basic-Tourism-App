@@ -36,6 +36,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.ArrayList;
 
 public class PlacesActivity extends AppCompatActivity {
     private String placeId;
@@ -114,7 +115,7 @@ public class PlacesActivity extends AppCompatActivity {
                 viewModel.getReviewsLiveData().observe(this, reviews -> {
                     RecyclerView recyclerView = findViewById(R.id.rv_reviews);
                     recyclerView.setLayoutManager(new LinearLayoutManager(this));
-                    recyclerView.setAdapter(new ReviewAdapter(this, reviews));
+                    recyclerView.setAdapter(new ReviewAdapter(this, reviews != null ? reviews : new ArrayList<>()));
                 });
             }
         });

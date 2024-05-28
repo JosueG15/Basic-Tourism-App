@@ -129,8 +129,12 @@ public class LocationViewModel extends AndroidViewModel {
         firebaseManager.fetchReviews(placeId, new FirebaseManager.FirebaseReviewsCallback() {
             @Override
             public void onSuccessReviews(List<GooglePlaceReview> firebaseReviews) {
-                List<GooglePlaceReview> combinedReviews = new ArrayList<>(googleReviews);
-                combinedReviews.addAll(firebaseReviews);
+                List<GooglePlaceReview> combinedReviews = googleReviews != null ? new ArrayList<>(googleReviews) : new ArrayList<>();
+
+                if (firebaseReviews != null) {
+                    combinedReviews.addAll(firebaseReviews);
+                }
+
                 reviewsLiveData.postValue(combinedReviews);
             }
 

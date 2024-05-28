@@ -120,6 +120,7 @@
                     android:layout_marginStart="32dp"
                     android:layout_marginTop="8dp"
                     android:layout_marginEnd="32dp"
+                    android:maxLines="1"
                     app:boxStrokeColor="@color/colorPrimary"
                     app:endIconMode="password_toggle"
                     app:hintTextColor="@color/textColorSecondary"

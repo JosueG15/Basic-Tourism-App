@@ -6,6 +6,8 @@
     <string name="global_username">Usuario</string>
     <string name="global_password">Contraseña</string>
     <string name="global_remember">Recuerdame</string>
+    <string name="global_save">Guardar</string>
+    <string name="global_back">Regresar</string>
 
     <!-- SignUp Activity -->
     <string name="signup_welcome_message">¡Iniciemos tu\nviaje juntos!</string>
@@ -29,7 +31,7 @@
 
     <!-- Menu -->
     <string name="menu_home">Inicio</string>
-    <string name="menu_location">Ubicacion</string>
+    <string name="menu_my_trips">Mis viajes</string>
     <string name="menu_chat">Chat</string>
     <string name="menu_favorite">Favoritos</string>
     <string name="menu_profile">Perfil</string>
@@ -54,4 +56,20 @@
 
     <!-- Profile -->
     <string name="profile_logout">Cerrar Sesión</string>
+    <string name="profile_picture">Foto de perfil</string>
+    <string name="profile_modify_data">Modificar información</string>
+    <string name="profile_delete_account">Borrar cuenta</string>
+    <string name="profile_name">Nombre</string>
+    <string name="profile_country">Pais</string>
+    <string name="profile_traveler_type">Tipo de viajero</string>
+    <string name="profile_pending_configuration">Perfil pendiente de configuración</string>
+
+    <!-- Edit Profile -->
+    <string name="edit_profile_name">Nombre</string>
+    <string name="edit_profile_country">Pais</string>
+    <string name="edit_profile_age">Edad</string>
+    <string name="edit_profile_nomad">Nómada</string>
+    <string name="edit_profile_tourist">Turista</string>
+    <string name="edit_profile_backpacker">Mochilero</string>
+
 </resources>

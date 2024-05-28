@@ -81,9 +81,6 @@ public class FavoritesActivity extends AppCompatActivity {
         } else if (menuId == R.id.navigation_location) {
             // Handle location action
             return true;
-        } else if (menuId == R.id.navigation_chat) {
-            // Handle chat action
-            return true;
         } else if (menuId == R.id.navigation_heart) {
             return true;
         } else if (menuId == R.id.navigation_person) {

@@ -1,12 +1,21 @@
 package com.moviles.proyectofinal.services;
+import android.net.Uri;
+import android.widget.ImageView;
+
 import androidx.annotation.NonNull;
 
+import com.bumptech.glide.Glide;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.moviles.proyectofinal.data.entity.GooglePlaceReview;
 import com.moviles.proyectofinal.data.entity.PlaceDetails;
 
@@ -17,10 +26,12 @@ import java.util.Objects;
 public class FirebaseManager {
     private final FirebaseAuth mAuth;
     private final DatabaseReference mDatabase;
+    private final StorageReference mStorage;
 
     public FirebaseManager() {
         mAuth = FirebaseAuth.getInstance();
         mDatabase = FirebaseDatabase.getInstance().getReference();
+        mStorage = FirebaseStorage.getInstance().getReference();
     }
 
     public void createAccount(String email, String password, FirebaseCallback callback) {
@@ -151,6 +162,167 @@ public class FirebaseManager {
                 callback.onError("Error al cargar reviews: " + error.getMessage());
             }
         });
+    }
+
+    public void uploadProfileImage(Uri filePath, FirebaseCallback callback) {
+        if (mAuth.getCurrentUser() != null) {
+            String userId = mAuth.getCurrentUser().getUid();
+            DatabaseReference profileImageRef = mDatabase.child("users").child(userId).child("profileImage");
+            profileImageRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    String existingImageUrl = dataSnapshot.getValue(String.class);
+                    if (existingImageUrl != null && !existingImageUrl.isEmpty()) {
+                        StorageReference existingImageRef = FirebaseStorage.getInstance().getReferenceFromUrl(existingImageUrl);
+                        existingImageRef.delete().addOnSuccessListener(aVoid -> {
+                            uploadNewProfileImage(filePath, userId, callback);
+                        }).addOnFailureListener(e -> {
+                            callback.onError("Error al eliminar la imagen existente: " + e.getMessage());
+                        });
+                    } else {
+                        uploadNewProfileImage(filePath, userId, callback);
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+                    callback.onError("Error al cargar la imagen de perfil existente: " + databaseError.getMessage());
+                }
+            });
+        } else {
+            callback.onError("Usuario no autenticado.");
+        }
+    }
+
+    public void getProfileImage(ImageView imageView, FirebaseImageCallback callback) {
+        if (mAuth.getCurrentUser() != null) {
+            String userId = mAuth.getCurrentUser().getUid();
+            mDatabase.child("users").child(userId).child("profileImage").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    String uri = dataSnapshot.getValue(String.class);
+                    if (uri != null) {
+                        Glide.with(imageView.getContext())
+                                .load(uri)
+                                .into(imageView);
+                        callback.onImageLoaded(Uri.parse(uri));
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    callback.onError("Error al cargar imagen de perfil: " + error.getMessage());
+                }
+            });
+        } else {
+            callback.onError("Usuario no autenticado.");
+        }
+    }
+
+    private void uploadNewProfileImage(Uri filePath, String userId, FirebaseCallback callback) {
+        StorageReference newImageRef = mStorage.child("profile_images/" + userId + ".jpg");
+        newImageRef.putFile(filePath)
+                .addOnSuccessListener(taskSnapshot -> newImageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                    mDatabase.child("users").child(userId).child("profileImage").setValue(uri.toString())
+                            .addOnSuccessListener(aVoid -> callback.onSuccess("Imagen de perfil subida correctamente."))
+                            .addOnFailureListener(e -> callback.onError("Error al guardar URL de la imagen: " + e.getMessage()));
+                }))
+                .addOnFailureListener(e -> callback.onError("Error al subir imagen: " + e.getMessage()));
+    }
+
+    public void deleteUserAccount(FirebaseCallback callback) {
+        if (mAuth.getCurrentUser() != null) {
+            String userId = mAuth.getCurrentUser().getUid();
+            DatabaseReference userRef = mDatabase.child("users").child(userId);
+
+            userRef.removeValue().addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    mAuth.getCurrentUser().delete().addOnCompleteListener(task1 -> {
+                        if (task1.isSuccessful()) {
+                            callback.onSuccess("Cuenta eliminada correctamente.");
+                        } else {
+                            callback.onError("Error al eliminar la cuenta: " + Objects.requireNonNull(task1.getException()).getMessage());
+                        }
+                    });
+                } else {
+                    callback.onError("Error al eliminar los datos del usuario: " + Objects.requireNonNull(task.getException()).getMessage());
+                }
+            });
+        } else {
+            callback.onError("Usuario no autenticado.");
+        }
+    }
+
+    public void reauthenticateUser(FirebaseCallback callback, String password) {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user != null) {
+            AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), password);
+
+            user.reauthenticate(credential).addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    callback.onSuccess("Reautenticación exitosa.");
+                } else {
+                    callback.onError("Error en la reautenticación: " + Objects.requireNonNull(task.getException()).getMessage());
+                }
+            });
+        } else {
+            callback.onError("Usuario no autenticado.");
+        }
+    }
+
+    public void saveUserProfile(String name, String country, int age, String profile, FirebaseCallback callback) {
+        if (mAuth.getCurrentUser() != null) {
+            String userId = mAuth.getCurrentUser().getUid();
+            DatabaseReference userRef = mDatabase.child("users").child(userId);
+            userRef.child("name").setValue(name);
+            userRef.child("country").setValue(country);
+            userRef.child("age").setValue(age);
+            userRef.child("profile").setValue(profile)
+                    .addOnSuccessListener(aVoid -> callback.onSuccess("Perfil actualizado correctamente."))
+                    .addOnFailureListener(e -> callback.onError("Error al actualizar el perfil: " + e.getMessage()));
+        } else {
+            callback.onError("Usuario no autenticado.");
+        }
+    }
+
+    public void getUserProfile(FirebaseUserProfileCallback callback) {
+        if (mAuth.getCurrentUser() != null) {
+            String userId = mAuth.getCurrentUser().getUid();
+            mDatabase.child("users").child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    String name = dataSnapshot.child("name").getValue(String.class);
+                    String country = dataSnapshot.child("country").getValue(String.class);
+                    Integer age = dataSnapshot.child("age").getValue(Integer.class);
+                    String profile = dataSnapshot.child("profile").getValue(String.class);
+
+                    if (name != null && country != null && age != null && profile != null) {
+                        callback.onSuccess(name, country, age, profile);
+                    } else {
+                        callback.onError("No se encontraron datos de perfil.");
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    callback.onError("Error al cargar los datos del perfil: " + error.getMessage());
+                }
+            });
+        } else {
+            callback.onError("Usuario no autenticado.");
+        }
+    }
+
+    public interface FirebaseUserProfileCallback {
+        void onSuccess(String name, String country, int age, String profile);
+        void onError(String error);
+    }
+
+
+
+    public interface FirebaseImageCallback {
+        void onImageLoaded(Uri uri);
+        void onError(String error);
     }
 
     public interface FirebaseReviewsCallback {

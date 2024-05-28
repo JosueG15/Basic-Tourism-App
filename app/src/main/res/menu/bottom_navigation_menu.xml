@@ -9,12 +9,7 @@
     <item
         android:id="@+id/navigation_location"
         android:icon="@drawable/ic_location"
-        android:title="@string/menu_location"
-        app:showAsAction="ifRoom"/>
-    <item
-        android:id="@+id/navigation_chat"
-        android:icon="@drawable/ic_chat"
-        android:title="@string/menu_chat"
+        android:title="@string/menu_my_trips"
         app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/navigation_heart"
