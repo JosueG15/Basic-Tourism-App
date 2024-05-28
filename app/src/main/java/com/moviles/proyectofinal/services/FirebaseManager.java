@@ -18,6 +18,8 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.moviles.proyectofinal.data.entity.GooglePlaceReview;
 import com.moviles.proyectofinal.data.entity.PlaceDetails;
+import com.moviles.proyectofinal.data.entity.Trip;
+import com.moviles.proyectofinal.ui.viewmodels.TripViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -313,12 +315,74 @@ public class FirebaseManager {
         }
     }
 
+
+    public void saveTrip(String tripName, int numberOfPeople, TripViewModel tripViewModel, FirebaseTripCallback callback) {
+        if (mAuth.getCurrentUser() != null) {
+            String userId = mAuth.getCurrentUser().getUid();
+            String tripId = mDatabase.child("trips").child(userId).push().getKey();
+
+            Trip trip = new Trip(tripId, tripName, numberOfPeople, tripViewModel.getSelectedDestinations().getValue(),
+                    tripViewModel.getScheduledDestinations().getValue(), tripViewModel.getHotelReservations().getValue(),
+                    tripViewModel.getActivityReservations().getValue());
+
+            mDatabase.child("trips").child(userId).child(tripId).setValue(trip)
+                    .addOnSuccessListener(aVoid -> callback.onSuccess())
+                    .addOnFailureListener(e -> callback.onError("Error al guardar el viaje: " + e.getMessage()));
+        } else {
+            callback.onError("Usuario no autenticado.");
+        }
+    }
+
+    public void fetchUserTrips(FirebaseTripsCallback callback) {
+        if (mAuth.getCurrentUser() != null) {
+            String userId = mAuth.getCurrentUser().getUid();
+            mDatabase.child("trips").child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    List<Trip> trips = new ArrayList<>();
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                        Trip trip = snapshot.getValue(Trip.class);
+                        trips.add(trip);
+                    }
+                    callback.onSuccess(trips);
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    callback.onError("Error al cargar los viajes: " + error.getMessage());
+                }
+            });
+        } else {
+            callback.onError("Usuario no autenticado.");
+        }
+    }
+
+    public void deleteTrip(String tripId, FirebaseTripCallback callback) {
+        if (mAuth.getCurrentUser() != null) {
+            String userId = mAuth.getCurrentUser().getUid();
+            mDatabase.child("trips").child(userId).child(tripId).removeValue()
+                    .addOnSuccessListener(aVoid -> callback.onSuccess())
+                    .addOnFailureListener(e -> callback.onError("Error al eliminar el viaje: " + e.getMessage()));
+        } else {
+            callback.onError("Usuario no autenticado.");
+        }
+    }
+
+    public void editTrip(Trip trip, FirebaseTripCallback callback) {
+        if (mAuth.getCurrentUser() != null) {
+            String userId = mAuth.getCurrentUser().getUid();
+            mDatabase.child("trips").child(userId).child(trip.getTripId()).setValue(trip)
+                    .addOnSuccessListener(aVoid -> callback.onSuccess())
+                    .addOnFailureListener(e -> callback.onError("Error al editar el viaje: " + e.getMessage()));
+        } else {
+            callback.onError("Usuario no autenticado.");
+        }
+    }
+
     public interface FirebaseUserProfileCallback {
         void onSuccess(String name, String country, int age, String profile);
         void onError(String error);
     }
-
-
 
     public interface FirebaseImageCallback {
         void onImageLoaded(Uri uri);
@@ -330,9 +394,19 @@ public class FirebaseManager {
         void onError(String error);
     }
 
-
     public interface FirebaseCallback {
         void onSuccess(String message);
+        void onError(String error);
+    }
+
+    public interface FirebaseTripCallback {
+        void onSuccess();
+        void onError(String error);
+    }
+
+
+    public interface FirebaseTripsCallback {
+        void onSuccess(List<Trip> trips);
         void onError(String error);
     }
 

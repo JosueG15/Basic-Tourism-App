@@ -82,6 +82,20 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        autoCompleteTextView.dismissDropDown();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        locationViewModel.getSearchResults().removeObservers(this);
+        locationViewModel.getNearbyPlaces("").removeObservers(this);
+    }
+
+
 
     private void setupElements() {
         if (!Places.isInitialized()) {
@@ -146,19 +160,7 @@ public class HomeActivity extends AppCompatActivity {
     private void setupObservers() {
         AutoCompleteTextView autoCompleteTextView = findViewById(R.id.et_search);
         locationViewModel.getSearchResults().observe(this, results -> {
-            ArrayAdapter<PlacePrediction> adapter = new ArrayAdapter<PlacePrediction>(this, android.R.layout.simple_dropdown_item_1line, results) {
-                @NonNull
-                @Override
-                public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-                    View view = super.getView(position, convertView, parent);
-                    TextView textView = view.findViewById(android.R.id.text1);
-                    PlacePrediction item = getItem(position);
-                    if (item != null) {
-                        textView.setText(item.getDescription());
-                    }
-                    return view;
-                }
-            };
+            ArrayAdapter<PlacePrediction> adapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, results);
             autoCompleteTextView.setAdapter(adapter);
             autoCompleteTextView.setOnItemClickListener((parent, view, position, id) -> {
                 PlacePrediction prediction = adapter.getItem(position);
@@ -166,8 +168,13 @@ public class HomeActivity extends AppCompatActivity {
                     navigateToPlaceActivity(prediction.getId());
                 }
             });
-            if (!results.isEmpty()) {
-                autoCompleteTextView.showDropDown();
+
+            if (!results.isEmpty() && !isFinishing() && !isDestroyed() && hasWindowFocus()) {
+                autoCompleteTextView.post(() -> {
+                    if (!isFinishing() && !isDestroyed() && hasWindowFocus()) {
+                        autoCompleteTextView.showDropDown();
+                    }
+                });
             }
         });
 
@@ -185,10 +192,10 @@ public class HomeActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-
             }
         });
     }
+
 
     private void setupAdapters() {
         RecyclerView recyclerView = findViewById(R.id.rv_category_list);
@@ -242,7 +249,7 @@ public class HomeActivity extends AppCompatActivity {
         if (menuId == R.id.navigation_home) {
             return true;
         } else if (menuId == R.id.navigation_location) {
-            // Handle location action
+            startActivity(new Intent(this, MyTripsActivity.class));
             return true;
         } else if (menuId == R.id.navigation_heart) {
             startActivity(new Intent(this, FavoritesActivity.class));
@@ -253,7 +260,6 @@ public class HomeActivity extends AppCompatActivity {
         }
         return false;
     }
-
 
     private void onNavigationItemReselected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.navigation_home) {

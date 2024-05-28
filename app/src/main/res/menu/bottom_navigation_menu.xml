@@ -8,7 +8,7 @@
         app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/navigation_location"
-        android:icon="@drawable/ic_location"
+        android:icon="@drawable/ic_travel_type"
         android:title="@string/menu_my_trips"
         app:showAsAction="ifRoom"/>
     <item

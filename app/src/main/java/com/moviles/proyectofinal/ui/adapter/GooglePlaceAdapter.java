@@ -150,7 +150,7 @@ public class GooglePlaceAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 int position = getBindingAdapterPosition();
                 if (position != RecyclerView.NO_POSITION) {
                     PlaceDetails placeDetails = placeDetailsList.get(position);
-                    listener.onPlaceClicked(placeDetails.getPlace().getPlaceId());  // Trigger the callback with the placeId
+                    listener.onPlaceClicked(placeDetails.getPlace().getPlaceId());
                 }
             });
         }

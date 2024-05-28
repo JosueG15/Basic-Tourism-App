@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tv_step_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/my_trip_step_1_title"
+        android:textSize="24sp" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_search"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+        android:hint="@string/my_trip_step_1_search_hint">
+
+        <AutoCompleteTextView
+            android:id="@+id/actv_destination_search"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:completionThreshold="1"
+            android:imeOptions="actionSearch"
+            android:padding="5dp"
+            android:inputType="text" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_selected_destinations"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="8dp" />
+
+    <Button
+        android:id="@+id/btn_continue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/global_continue"
+        android:enabled="false"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/colorPrimary" />
+
+    <Button
+        android:id="@+id/btn_discard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/my_trip_step_1_discard"
+        android:layout_marginTop="4dp"
+        android:backgroundTint="@color/colorPrimary" />
+
+</LinearLayout>

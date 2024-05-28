@@ -117,7 +117,7 @@ public class ProfileActivity extends AppCompatActivity {
             startActivity(new Intent(this, HomeActivity.class));
             return true;
         } else if (menuId == R.id.navigation_location) {
-            // Handle location action
+            startActivity(new Intent(this, MyTripsActivity.class));
             return true;
         } else if (menuId == R.id.navigation_heart) {
             startActivity(new Intent(this, FavoritesActivity.class));
@@ -182,7 +182,7 @@ public class ProfileActivity extends AppCompatActivity {
         firebaseManager.getProfileImage(findViewById(R.id.iv_profile_picture), new FirebaseManager.FirebaseImageCallback() {
             @Override
             public void onImageLoaded(Uri uri) {
-                // Imagen cargada correctamente
+
             }
 
             @Override

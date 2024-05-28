@@ -7,7 +7,10 @@
     <string name="global_password">Contraseña</string>
     <string name="global_remember">Recuerdame</string>
     <string name="global_save">Guardar</string>
+    <string name="global_delete">Eliminar</string>
+    <string name="global_continue">Continuar</string>
     <string name="global_back">Regresar</string>
+    <string name="global_see">Ver</string>
 
     <!-- SignUp Activity -->
     <string name="signup_welcome_message">¡Iniciemos tu\nviaje juntos!</string>
@@ -71,5 +74,23 @@
     <string name="edit_profile_nomad">Nómada</string>
     <string name="edit_profile_tourist">Turista</string>
     <string name="edit_profile_backpacker">Mochilero</string>
+
+    <!-- My Trips -->
+    <string name="my_trips_title">Mis viajes</string>
+    <string name="my_trips_number_of_people">No. Personas: %d</string>
+    <string name="my_trips_new">Crear viaje</string>
+    <string name="my_trip_step_1_title">Paso 1: Seleccionar Destinos</string>
+    <string name="my_trip_step_1_search_hint">Buscar destino</string>
+    <string name="my_trip_step_1_discard">Descartar</string>
+    <string name="my_trip_step_2_title">Paso 2: Organizar Destinos</string>
+    <string name="my_trip_step_2_select_date">Seleeciona fecha</string>
+    <string name="my_trip_step_2_itinerary">Itinerario</string>
+    <string name="my_trip_step_3_title">Paso 3: Reservas de hotel</string>
+    <string name="my_trip_step_3_hint_search_hotels">Buscar hotel</string>
+    <string name="my_trip_step_3_reservations">Reservas</string>
+    <string name="my_trip_step_4_title">Paso 4: Reserva de actividades</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
 
 </resources>

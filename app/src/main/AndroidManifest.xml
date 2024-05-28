@@ -25,8 +25,23 @@
         android:theme="@style/Theme.ProyectoFinalMoviles"
         tools:targetApi="31">
         <activity
-            android:name=".ui.activities.EditProfileActivity"
+            android:name=".ui.activities.TripDetailsActivity"
             android:exported="false" />
+        <activity
+            android:name=".ui.activities.CreateTripActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.activities.MyTripsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.activities.EditProfileActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".ui.activities.ProfileActivity"
             android:exported="false"

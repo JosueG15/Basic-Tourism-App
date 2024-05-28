@@ -79,7 +79,7 @@ public class FavoritesActivity extends AppCompatActivity {
             startActivity(new Intent(this, HomeActivity.class));
             return true;
         } else if (menuId == R.id.navigation_location) {
-            // Handle location action
+            startActivity(new Intent(this, MyTripsActivity.class));
             return true;
         } else if (menuId == R.id.navigation_heart) {
             return true;
